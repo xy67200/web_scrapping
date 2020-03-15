@@ -28,6 +28,8 @@ router.get("/get-elkhabar",newsController.getelkhabarResponse)
 router.get("/get-dzlayer",newsController.getdzlayerResponse);
 router.get("/get-elbilad",newsController.getelbiladResponse);
 router.get("/get-latest-news",newsController.getLatestNews);
+router.get("/get-echoroukonlinear",newsController.getechoroukonlinearResponse);
+router.get("/get-echoroukonlinefr",newsController.getechoroukonlinefrResponse);
 
 module.exports = router;
 
