@@ -23,6 +23,7 @@ router.get("/get-language-wise-data/:lang",newsController.getLanguageWiseData);
 router.get("/get-category-wise-data/:category",newsController.getCategoryWiseData);
 router.get("/get-title-wise",newsController.getNewsByTitle);
 router.get("/get-news-by-country-and-category",newsController.getNewsByCategoryAndCountry);
+router.get("/get-latest-news-with-country-and-category",newsController.getLatestNewsWithCategoryAndCountry)
 router.get("/get-ennaharonline",newsController.getennaharonlineResponse);
 router.get("/get-elkhabar",newsController.getelkhabarResponse) 
 router.get("/get-dzlayer",newsController.getdzlayerResponse);

@@ -1136,7 +1136,7 @@ crontab.scheduleJob('*/5 * * * *', getreportersResponse = (req, res) => {
 
                 .catch(function (err) {
                     console.log("err", err);
-                    res.send({ "err": "errr" })
+                    // res.send({ "err": "errr" })
                     //handle error
                 });
         })
@@ -2816,7 +2816,26 @@ getLatestNews = function (req, res) {
     })
 }
 
-
+/**
+ * get latest threedays new with category and country
+ */
+getLatestNewsWithCategoryAndCountry = function (req, res) {
+    let d = new Date();
+    let threeDaysPrevious = d.setDate(d.getDate() - 3);
+    threeDaysPrevious = new Date(threeDaysPrevious).toISOString();
+    console.log("PREVIOUS:", threeDaysPrevious)
+    console.log("QUERY:", req.query.country, req.query.category)
+    newsModel.find({ $and: [{ 'category.category': req.query.category }, { 'country.country': req.query.country },{publishedAt: { $gt: threeDaysPrevious }}] }).exec((err, news) => {
+        if (err) {
+            res.send({ status: 500, message: 'Internal Serevr Error' });
+        } else if (news && news.length) {
+            console.log("LENGTH:", news.length)
+            res.send({ status: 200, message: 'Category & Country Wise News Get Succesfully', data: news })
+        } else {
+            res.send({ status: 500, message: 'News Not Found' });
+        }
+    })
+}
 
 module.exports = {
     getElwatanResponse: getElwatanResponse,
@@ -2845,7 +2864,8 @@ module.exports = {
     deleteBlankRecord: deleteBlankRecord,
     getNewsByTitle: getNewsByTitle,
     getNewsByCategoryAndCountry: getNewsByCategoryAndCountry,
-    getLatestNews: getLatestNews
+    getLatestNews: getLatestNews,
+    getLatestNewsWithCategoryAndCountry:getLatestNewsWithCategoryAndCountry
 }
 
 
