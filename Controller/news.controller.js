@@ -47,9 +47,9 @@ const elwatan = ["https://www.elwatan.com/category/edition/actualite",
         "http://dia-algerie.com/category/politique/",],
 
     dzairdaily = ["https://www.dzairdaily.com/actualite/",
-        // "https://www.dzairdaily.com/politique/",
-        // "https://www.dzairdaily.com/economie/",
-        // "https://www.dzairdaily.com/societe-culture/",
+        "https://www.dzairdaily.com/politique/",
+        "https://www.dzairdaily.com/economie/",
+        "https://www.dzairdaily.com/societe-culture/",
         "https://www.dzairdaily.com/foot/"],
 
     inter_lignes = ["https://www.inter-lignes.com/Cat/politique/",
@@ -854,9 +854,9 @@ crontab.scheduleJob('*/5 * * * *', getdzairdailyResponse = (req, res) => {
     // getdzairdailyResponse = function (req, res) {
     console.log("=========")
     new Promise((reject, resolve) => {
-        dzairdaily.forEach(data => {
+        dzairdaily.forEach(async data => {
             var url = data
-            rp(url)
+            await rp(url)
                 .then(function (html) {
                     console.log("html", html);
                     const articalLength = cheerio('h3 > a', html).length
@@ -874,45 +874,73 @@ crontab.scheduleJob('*/5 * * * *', getdzairdailyResponse = (req, res) => {
                         articalUrls[i].description = $(this).text().trim();
                     });
                     console.log("articalurls===>", articalUrls)
-                    return Promise.all(
-                        articalUrls.map(function (url) {
-                            return getParsedzairdailyData(url, category);
-                        })
-                    );
-                })
-                .then(function (articals) {
-                    console.log("atricals-=======>", articals, articals.length)
-                    articals.forEach(artical => {
-                        console.log("AAAAAAAAAAAAAAAAAAAA:", artical)
-                        if (artical) {
-                            newsModel.find({ title: artical.title })
-                                .exec((err, foundNews) => {
-                                    if (err) {
-                                        reject({ status: 500, message: 'Internal Serevr Error' });
-                                    } else if (foundNews && foundNews.length) {
-                                        console.log("foundNews:", foundNews)
-                                        reject({ status: 401, message: 'news already created' });
-                                    } else {
-                                        if (artical.title && artical.content) {
-                                            newsModel.create(artical,
-                                                function (err, news) {
+                    let arr = []
+                    // return Promise.all(
+                        articalUrls.forEach(async url => {
+                            console.log("urlllllll", url)
+                            await rp(url.linkUrl)
+                                .then(function (html) {
+                                    var $ = cheerio.load(html);
+                                    const date = $("meta[property='article:published_time']").attr("content");
+                                    const obj = {
+                                        title: cheerio('h1.entry-title', html).text(),
+                                        urlToImage: cheerio('img.wp-post-image', html).attr('src'),
+                                        author: cheerio('span.entry-author', html).text().trim(),
+                                        publishedAt: date,
+                                        content: cheerio('.entry-content p ,.entry-content h4', html).text().trim(),
+                                        description: url.description,
+                                        url: url.linkUrl,
+                                        category: {
+                                            category: category
+                                        },
+                                        country: {
+                                            country: 'DZ',
+                                            lang: 'fr'
+                                        }
+                                    }
+                                    arr.push(obj)
+                                 return arr
+                                  
+                                }).then(function (articals) {
+                                    console.log("atricals-=======>", articals, articals.length)
+                                    articals.forEach(artical => {
+                                        // console.log("AAAAAAAAAAAAAAAAAAAA:", artical)
+                                        if (artical) {
+                                            newsModel.find({ title: artical.title })
+                                                .exec((err, foundNews) => {
                                                     if (err) {
-                                                        res.status(500).json({ message: 'News Not Created' })
+                                                        reject({ status: 500, message: 'Internal Serevr Error' });
+                                                    } else if (foundNews && foundNews.length) {
+                                                        console.log("foundNews:", foundNews)
+                                                        reject({ status: 401, message: 'news already created' });
                                                     } else {
-                                                        console.log("presidants====>", news);
-                                                        // res.status(200).json({totalResult: articals.length, artical: news })
-                                                        // res.send({ status: 'ok', totalResult: articals.length, artical: news })
+                                                        if (artical.title && artical.content) {
+                                                            newsModel.create(artical,
+                                                                function (err, news) {
+                                                                    if (err) {
+                                                                        res.status(500).json({ message: 'News Not Created' })
+                                                                    } else {
+                                                                        console.log("presidants====>", news);
+                                                                        // res.status(200).json({totalResult: articals.length, artical: news })
+                                                                        // res.send({ status: 'ok', totalResult: articals.length, artical: news })
+                                                                    }
+                                                                })
+                                                        }
                                                     }
                                                 })
                                         }
-                                    }
+                                    })
                                 })
-                        }
-                    })
+                                .catch(function (err) {
+                                    //handle error
+                                });
+                                return arr
+                         
+                        })
+                        // );
                 })
-
+               
                 .catch(function (err) {
-                    console.log("err", err);
                     // res.send({ "err": "errr" })
                     //handle error
                 });
@@ -921,34 +949,6 @@ crontab.scheduleJob('*/5 * * * *', getdzairdailyResponse = (req, res) => {
     // }
 })
 
-const getParsedzairdailyData = function (url, category) {
-    console.log("urlllll=====>", url, category)
-    return rp(url.linkUrl)
-        .then(function (html) {
-            var $ = cheerio.load(html);
-            const date = $("meta[property='article:published_time']").attr("content");
-            return {
-                title: cheerio('h1.entry-title', html).text(),
-                urlToImage: cheerio('img.wp-post-image', html).attr('src'),
-                author: cheerio('span.entry-author', html).text().trim(),
-                publishedAt: date,
-                content: cheerio('.entry-content p ,.entry-content h4', html).text().trim(),
-                description: url.description,
-                url: url.linkUrl,
-                category: {
-                    category: category
-                },
-                country: {
-                    country: 'DZ',
-                    lang: 'fr'
-                }
-            };
-        })
-        .catch(function (err) {
-            console.log("errr=====>", err)
-            //handle error
-        });
-};
 
 crontab.scheduleJob('*/5 * * * *', getInterLignesResponse = (req, res) => {
     console.log("=========")
@@ -1133,7 +1133,7 @@ crontab.scheduleJob('*/5 * * * *', getreportersResponse = (req, res) => {
 
                 .catch(function (err) {
                     console.log("err", err);
-                    res.send({ "err": "errr" })
+                    // res.send({ "err": "errr" })
                     //handle error
                 });
         })
@@ -2752,7 +2752,26 @@ getLatestNews = function (req, res) {
     })
 }
 
-
+/**
+ * get latest threedays new with category and country
+ */
+getLatestNewsWithCategoryAndCountry = function (req, res) {
+    let d = new Date();
+    let threeDaysPrevious = d.setDate(d.getDate() - 3);
+    threeDaysPrevious = new Date(threeDaysPrevious).toISOString();
+    console.log("PREVIOUS:", threeDaysPrevious)
+    console.log("QUERY:", req.query.country, req.query.category)
+    newsModel.find({ $and: [{ 'category.category': req.query.category }, { 'country.country': req.query.country },{publishedAt: { $gt: threeDaysPrevious }}] }).exec((err, news) => {
+        if (err) {
+            res.send({ status: 500, message: 'Internal Serevr Error' });
+        } else if (news && news.length) {
+            console.log("LENGTH:", news.length)
+            res.send({ status: 200, message: 'Category & Country Wise News Get Succesfully', data: news })
+        } else {
+            res.send({ status: 500, message: 'News Not Found' });
+        }
+    })
+}
 
 module.exports = {
     getElwatanResponse: getElwatanResponse,
@@ -2781,6 +2800,7 @@ module.exports = {
     deleteBlankRecord: deleteBlankRecord,
     getNewsByTitle: getNewsByTitle,
     getNewsByCategoryAndCountry: getNewsByCategoryAndCountry,
-    getLatestNews: getLatestNews
+    getLatestNews: getLatestNews,
+    getLatestNewsWithCategoryAndCountry:getLatestNewsWithCategoryAndCountry
 }
 
