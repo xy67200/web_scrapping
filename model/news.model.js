@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const newsSchema = new Schema({
-    // name: {type:String}
+    
     createdAt : {type:Date,default:Date.now()},
     title : {type:String},
     urlToImage : {type:String},
@@ -17,7 +17,11 @@ const newsSchema = new Schema({
     country : {
         country : {type:String},
         lang: {type:String}
-    }
+    },
+    source: {
+        id: {type:String},
+        name: {type:String},
+    },
 });
 
 

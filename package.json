@@ -19,6 +19,7 @@
     "morgan": "^1.9.1",
     "node-crontab": "0.0.8",
     "request": "^2.88.2",
-    "request-promise": "^4.2.5"
+    "request-promise": "^4.2.5",
+    "request-promise-retry": "^1.0.0"
   }
 }
