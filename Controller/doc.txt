@@ -1,0 +1,5 @@
+5 websites............
+
+Get all URLS in array with format like this [{category:"fff",link:"link.com"},...,....]
+
+Async foreach on this array, callback on res or error
